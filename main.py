@@ -2,22 +2,22 @@ import streamlit as st
 import time
 
 # Set page configuration
-st.set_page_config(page_title="AgnostiCare: Unified Shield", layout="centered")
+st.set_page_config(page_title="Homigo: Home Service on the Go", layout="centered")
 
-# Custom Title
-st.title("🛡️ AgnostiCare")
-st.subheader("The Universal Home & Vehicle Maintenance Hub")
+# Custom Title and Tagline
+st.title("🏠 Homigo")
+st.subheader("Home service on the go")
 st.markdown("---")
 
 # Navigation Sidebar
 st.sidebar.header("Navigation")
-menu = st.sidebar.radio("Go to:", ["My Unified Shield", "Predictive Vigil Alerts", "Visual Diagnostics"])
+menu = st.sidebar.radio("Go to:", ["My Unified Shield", "Guardian Predictive Alerts", "Visual Diagnostics"])
 
 # ----------------------------------------
 # PAGE 1: The Brand-Agnostic Dashboard
 # ----------------------------------------
 if menu == "My Unified Shield":
-    st.header("🏠 My Covered Ecosystem")
+    st.header("🛡️ My Covered Ecosystem")
     st.success("Subscription Status: ACTIVE (All-Appliance AMC)")
     
     col1, col2, col3 = st.columns(3)
@@ -41,24 +41,24 @@ if menu == "My Unified Shield":
     st.write("**Total Estimated Savings vs Reactive Repair:** ₹12,500/year")
 
 # ----------------------------------------
-# PAGE 2: Predictive Maintenance (PdM)
+# PAGE 2: Predictive Maintenance (PdM) - GUARDIAN
 # ----------------------------------------
-elif menu == "Predictive Vigil Alerts":
-    st.header("🚨 Vigil Predictive System")
-    st.write("Monitoring IoT sensors across your digital twin network...")
+elif menu == "Guardian Predictive Alerts":
+    st.header("🛡️ Guardian Smart Monitor")
+    st.write("Analyzing IoT sensors across your digital twin network...")
     
     # Simulate a scanning effect
-    with st.spinner("Analyzing component frequencies..."):
+    with st.spinner("Guardian is checking component frequencies..."):
         time.sleep(2)
         
-    st.error("⚠️ **CRITICAL PREDICTIVE ALERT DETECTED**")
+    st.error("🚨 **CRITICAL PREDICTIVE ALERT**")
     st.write("**Device:** Daikin Air Conditioner (Master Bedroom)")
-    st.write("**Anomaly:** Abnormal Compressor Vibration (Granger Causality match found)")
-    st.write("**Prediction:** System failure likely within 14 days.")
+    st.write("**Anomaly:** Abnormal Compressor Vibration detected.")
+    st.write("**Prediction:** Mechanical failure likely within 14 days.")
     
     st.markdown("### Suggested Action:")
     st.info("🔧 Dispatch Technician for Preventative Alignment")
-    st.write("**Cost:** ₹0.00 (Covered under Unified Shield)")
+    st.write("**Cost:** ₹0.00 (Covered under Homigo Shield)")
     
     if st.button("Accept & Dispatch Technician"):
         st.success("Technician 'Ramesh K.' has been dispatched! Arriving tomorrow at 10:00 AM.")
@@ -69,13 +69,13 @@ elif menu == "Predictive Vigil Alerts":
 # ----------------------------------------
 elif menu == "Visual Diagnostics":
     st.header("📷 AI Visual Diagnostics")
-    st.write("Upload a photo of the damaged appliance to instantly identify the required parts and specialized technician.")
+    st.write("Upload a photo of the damaged appliance to instantly identify the issue.")
     
     uploaded_file = st.file_uploader("Upload Image...", type=["jpg", "png", "jpeg"])
     
     if uploaded_file is not None:
         st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
-        st.write("Scanning image using Convolutional Neural Networks...")
+        st.write("Homigo AI is scanning image using CNN models...")
         
         # Simulate ML processing delay
         progress_bar = st.progress(0)
@@ -84,6 +84,6 @@ elif menu == "Visual Diagnostics":
             progress_bar.progress(i + 1)
             
         st.success("Diagnostic Complete!")
-        st.write("🔍 **Identified Object:** Front-Load Washing Machine")
-        st.write("🛠️ **Detected Fault:** Clogged Water Inlet Filter (Confidence: 94%)")
-        st.button("Request Plumber/Appliance Tech")
+        st.write("🔍 **Identified:** Front-Load Washing Machine")
+        st.write("🛠️ **Fault:** Clogged Water Inlet Filter (Confidence: 94%)")
+        st.button("Request Homigo Expert")
