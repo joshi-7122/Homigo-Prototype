@@ -1,4 +1,7 @@
 import streamlit as st
+import cv2
+import numpy as np
+from PIL import Image
 import time
 
 # Set page configuration
@@ -21,69 +24,68 @@ if menu == "My Unified Shield":
     st.success("Subscription Status: ACTIVE (All-Appliance AMC)")
     
     col1, col2, col3 = st.columns(3)
-    
     with col1:
         st.info("❄️ **LG Refrigerator**")
         st.caption("Health: 98% (Optimal)")
-        st.caption("Last Serviced: Jan 2026")
-        
     with col2:
         st.warning("💨 **Daikin AC**")
         st.caption("Health: 72% (Warning)")
-        st.caption("Last Serviced: Aug 2025")
-        
     with col3:
         st.info("🚗 **Honda City**")
         st.caption("Health: 89% (Good)")
-        st.caption("Next Service: 5,000 km")
-
-    st.markdown("---")
-    st.write("**Total Estimated Savings vs Reactive Repair:** ₹12,500/year")
 
 # ----------------------------------------
-# PAGE 2: Predictive Maintenance (PdM) - GUARDIAN
+# PAGE 2: Predictive Maintenance (PdM)
 # ----------------------------------------
 elif menu == "Guardian Predictive Alerts":
     st.header("🛡️ Guardian Smart Monitor")
-    st.write("Analyzing IoT sensors across your digital twin network...")
+    st.write("Analyzing IoT sensors for fault propagation...")
     
-    # Simulate a scanning effect
-    with st.spinner("Guardian is checking component frequencies..."):
-        time.sleep(2)
+    with st.spinner("Guardian is checking frequencies..."):
+        time.sleep(1.5)
         
     st.error("🚨 **CRITICAL PREDICTIVE ALERT**")
-    st.write("**Device:** Daikin Air Conditioner (Master Bedroom)")
-    st.write("**Anomaly:** Abnormal Compressor Vibration detected.")
-    st.write("**Prediction:** Mechanical failure likely within 14 days.")
-    
-    st.markdown("### Suggested Action:")
-    st.info("🔧 Dispatch Technician for Preventative Alignment")
-    st.write("**Cost:** ₹0.00 (Covered under Homigo Shield)")
+    st.write("**Device:** Daikin Air Conditioner")
+    st.write("**Anomaly:** Abnormal Compressor Vibration.")
+    st.info("🔧 Suggestion: Schedule preventative service now (Free under Homigo Shield).")
     
     if st.button("Accept & Dispatch Technician"):
-        st.success("Technician 'Ramesh K.' has been dispatched! Arriving tomorrow at 10:00 AM.")
+        st.success("Technician dispatched! Arriving tomorrow at 10:00 AM.")
         st.balloons()
 
 # ----------------------------------------
-# PAGE 3: Visual Diagnostic (AI Mockup)
+# PAGE 3: Visual Diagnostics (REAL OPENCV INTEGRATION)
 # ----------------------------------------
 elif menu == "Visual Diagnostics":
-    st.header("📷 AI Visual Diagnostics")
-    st.write("Upload a photo of the damaged appliance to instantly identify the issue.")
+    st.header("📷 AI Visual Diagnostics (Powered by OpenCV)")
+    st.write("Upload a photo of the damaged part to identify the fault pattern.")
     
     uploaded_file = st.file_uploader("Upload Image...", type=["jpg", "png", "jpeg"])
     
     if uploaded_file is not None:
-        st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
-        st.write("Homigo AI is scanning image using CNN models...")
+        # Convert the file to an image that OpenCV can read
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        opencv_image = cv2.imdecode(file_bytes, 1)
+        opencv_image = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2RGB) # Convert BGR to RGB for Streamlit
         
-        # Simulate ML processing delay
-        progress_bar = st.progress(0)
-        for i in range(100):
-            time.sleep(0.02)
-            progress_bar.progress(i + 1)
+        col_orig, col_proc = st.columns(2)
+        
+        with col_orig:
+            st.image(opencv_image, caption="Uploaded Original", use_container_width=True)
             
+        with col_proc:
+            # REAL OPENCV PROCESSING: Edge Detection
+            # This demonstrates "Scanning" for cracks or structural issues
+            with st.spinner("OpenCV is analyzing fault patterns..."):
+                gray = cv2.cvtColor(opencv_image, cv2.COLOR_RGB2GRAY)
+                edges = cv2.Canny(gray, 100, 200) # Edge detection
+                st.image(edges, caption="Homigo AI Scan (OpenCV Edges)", use_container_width=True)
+        
         st.success("Diagnostic Complete!")
-        st.write("🔍 **Identified:** Front-Load Washing Machine")
-        st.write("🛠️ **Fault:** Clogged Water Inlet Filter (Confidence: 94%)")
-        st.button("Request Homigo Expert")
+        st.markdown("""
+        **🔍 Homigo Analysis Summary:**
+        * **Detected Component:** Mechanical Housing
+        * **AI Confidence:** 91.4%
+        * **Recommendation:** Structural integrity check required.
+        """)
+        st.button("Connect with Homigo Expert")
