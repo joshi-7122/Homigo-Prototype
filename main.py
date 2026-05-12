@@ -121,32 +121,32 @@ if menu == "🏠 Home / AMC Hub":
                 st.rerun()
 
         # STEP 4: SUCCESS & EXPIRY CALCULATION
-       elif st.session_state.checkout_step == 'success':
+      # ... inside the 'else' block of your menu ...
+    else:
+        if st.session_state.checkout_step == 'selection':
+            # selection code here...
+            
+        elif st.session_state.checkout_step == 'details':
+            # details code here...
+            
+        elif st.session_state.checkout_step == 'payment':
+            # payment code here...
+            
+        elif st.session_state.checkout_step == 'success': # <--- LINE 124 MUST BE HERE
             st.balloons()
             st.header("✅ Payment Confirmed")
             if st.button("Go to Home"):
-                # --- IMPROVED HUMAN-LOGIC DATE CALCULATION ---
-                # We calculate by adding months instead of just total days
+                # Human-Logic Date Code
                 dur_str = st.session_state.temp_data['duration']
-                months_map = {
-                    "6 Months": 6, 
-                    "9 Months": 9, 
-                    "1.5 Years": 18, 
-                    "2 Years": 24, 
-                    "3 Years": 36
-                }
-                
-                # Get the number of months to add
+                months_map = {"6 Months": 6, "9 Months": 9, "1.5 Years": 18, "2 Years": 24, "3 Years": 36}
                 add_months = months_map[dur_str]
                 
-                # Calculate the new date
                 now = datetime.now()
-                # Simple logic: Add years and months
                 new_month = (now.month + add_months - 1) % 12 + 1
                 new_year = now.year + (now.month + add_months - 1) // 12
                 expiry_date = now.replace(year=new_year, month=new_month).strftime("%d %b %Y")
                 
-                # Save the data
+                # Save data logic...
                 st.session_state.is_subscribed = True
                 st.session_state.subscription_data = {
                     "name": st.session_state.temp_name, 
