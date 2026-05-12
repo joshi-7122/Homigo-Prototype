@@ -154,7 +154,7 @@ elif menu == "🛡️ Guardian Live Feed":
         v1 = m1.empty(); v2 = m2.empty(); v3 = m3.empty()
         chart_space = st.empty()
         
-       if st.button("Start Live Monitoring"):
+        if st.button("Start Live Monitoring"):
             pulse = pd.DataFrame(np.random.randn(20, 1), columns=['Vibration Pulse'])
             for i in range(25):
                 v = round(0.42 + np.random.normal(0, 0.04), 3)
