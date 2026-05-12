@@ -15,7 +15,7 @@ if 'subscription_data' not in st.session_state:
 
 st.set_page_config(page_title="Homigo | Smart Hub", layout="centered")
 
-# --- 2. SIDEBAR ---
+# --- 2. SIDEBAR STATUS ---
 st.sidebar.title("🏠 Homigo")
 if st.session_state.is_subscribed:
     st.sidebar.success(f"🛡️ Shield Active: {st.session_state.subscription_data['brand']} {st.session_state.subscription_data['appliance']}")
@@ -34,6 +34,7 @@ if menu == "🏠 Home / AMC Hub":
     st.subheader("Home service on the go")
     st.markdown("---")
 
+    # VIEW A: THE ACTIVE DASHBOARD
     if st.session_state.is_subscribed and st.session_state.checkout_step == 'selection':
         data = st.session_state.subscription_data
         st.header(f"Account: {data['name']}")
@@ -45,9 +46,10 @@ if menu == "🏠 Home / AMC Hub":
                 st.write(f"**Appliance:** {data['brand']} {data['appliance']}")
                 st.write(f"**Age Bracket:** {data['timeline']}")
                 st.write(f"**Contract:** {data['duration']}")
-                st.write(f"**Valid Until:** :green[{data['expiry']}]") # Showing when AMC lasts
+                st.write(f"**Valid Until:** :green[{data['expiry']}]") 
                 st.write(f"**Reference ID:** #HMGO-{data['order_id']}")
             with col2:
+                # Engineering Health Metric
                 st.metric("Unit Health", "94%", delta="Optimal")
         
         st.markdown("---")
@@ -55,7 +57,10 @@ if menu == "🏠 Home / AMC Hub":
             st.session_state.is_subscribed = False
             st.session_state.checkout_step = 'selection'
             st.rerun()
+    
+    # VIEW B: THE CHECKOUT FLOW
     else:
+        # STEP 1: PLAN SELECTION
         if st.session_state.checkout_step == 'selection':
             st.header("🛡️ Service Plan Selection")
             app_type = st.selectbox("Select Appliances:", ["Air Conditioner (AC)", "Refrigerator", "Washing Machine", "RO Purifier", "Microwave Oven"])
@@ -67,13 +72,12 @@ if menu == "🏠 Home / AMC Hub":
                       "Microwave Oven": ["Samsung", "LG"]}
             brand_name = st.selectbox("Select Brand:", brands[app_type])
             
-            # UPDATED LABEL
             timeline_options = ["2000-2005", "2006-2010", "2011-2015", "2016-2020", "2021-Present"]
             selected_timeline = st.selectbox("In which time period does your appliance fall?", timeline_options, index=3)
             
             duration = st.radio("Contract Period:", ["6 Months", "9 Months", "1.5 Years", "2 Years", "3 Years"], horizontal=True)
             
-            # Pricing Engine
+            # Pricing Calculation
             pricing_matrix = {"Air Conditioner (AC)": 1800, "Refrigerator": 1400, "Washing Machine": 1200, "RO Purifier": 1100, "Microwave Oven": 700}
             age_multiplier = {"2000-2005": 1.6, "2006-2010": 1.4, "2011-2015": 1.2, "2016-2020": 1.0, "2021-Present": 0.9}
             dur_map = {"6 Months": 0.6, "9 Months": 0.8, "1.5 Years": 1.4, "2 Years": 1.8, "3 Years": 2.5}
@@ -85,24 +89,43 @@ if menu == "🏠 Home / AMC Hub":
                 st.session_state.checkout_step = 'details'
                 st.rerun()
 
+        # STEP 2: BILLING DETAILS (WITH VALIDATION)
         elif st.session_state.checkout_step == 'details':
             st.header("📋 Billing Details")
-            with st.form("details"):
-                u_name = st.text_input("Name"); u_email = st.text_input("Email"); u_mobile = st.text_input("Mobile"); u_addr = st.text_area("Address")
-                if st.form_submit_button("Proceed to Payment"):
-                    st.session_state.temp_name = u_name; st.session_state.checkout_step = 'payment'; st.rerun()
+            with st.form("details_form"):
+                u_name = st.text_input("Full Name")
+                u_email = st.text_input("Email ID")
+                u_mobile = st.text_input("Mobile Number")
+                u_addr = st.text_area("Full Installation Address")
+                
+                submit_details = st.form_submit_button("Proceed to Payment")
+                
+                if submit_details:
+                    # VALIDATION GATE: Ensure no field is empty
+                    if u_name and u_email and u_mobile and u_addr:
+                        st.session_state.temp_name = u_name
+                        st.session_state.checkout_step = 'payment'
+                        st.rerun()
+                    else:
+                        st.error("⚠️ Error: All fields are mandatory. Please fill in your details to continue.")
 
+        # STEP 3: PAYMENT
         elif st.session_state.checkout_step == 'payment':
-            st.header("💳 Secure Payment"); st.image("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Homigo", width=150)
+            st.header("💳 Secure Payment")
+            st.write(f"Authorized Amount: **₹{st.session_state.temp_data['price']}**")
+            st.image("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Homigo", width=150)
             if st.button("Verify & Pay"):
-                with st.spinner("Processing..."): time.sleep(1); st.session_state.checkout_step = 'success'; st.rerun()
+                with st.spinner("Processing..."): 
+                    time.sleep(1)
+                st.session_state.checkout_step = 'success'
+                st.rerun()
 
+        # STEP 4: SUCCESS & EXPIRY CALCULATION
         elif st.session_state.checkout_step == 'success':
-            st.balloons(); st.header("✅ Payment Confirmed")
+            st.balloons()
+            st.header("✅ Payment Confirmed")
             if st.button("Go to Home"):
-                # LOGIC TO CALCULATE EXPIRY DATE
                 dur_str = st.session_state.temp_data['duration']
-                # Default 365 days, adjust based on choice
                 days_map = {"6 Months": 182, "9 Months": 273, "1.5 Years": 547, "2 Years": 730, "3 Years": 1095}
                 expiry_date = (datetime.now() + timedelta(days=days_map[dur_str])).strftime("%d %b %Y")
                 
@@ -116,7 +139,8 @@ if menu == "🏠 Home / AMC Hub":
                     "expiry": expiry_date,
                     "order_id": np.random.randint(1000, 9999)
                 }
-                st.session_state.checkout_step = 'selection'; st.rerun()
+                st.session_state.checkout_step = 'selection'
+                st.rerun()
 
 # ----------------------------------------
 # PAGE 2: GUARDIAN LIVE FEED
@@ -127,62 +151,17 @@ elif menu == "🛡️ Guardian Live Feed":
         data = st.session_state.subscription_data
         st.subheader(f"Telemetry Stream: {data['brand']} {data['appliance']}")
         m1, m2, m3 = st.columns(3)
-        vibrate_metric = m1.empty(); temp_metric = m2.empty(); load_metric = m3.empty()
+        v1 = m1.empty(); v2 = m2.empty(); v3 = m3.empty()
         chart_space = st.empty()
         
         if st.button("Start Live Monitoring"):
-            pulse_data = pd.DataFrame(np.random.randn(20, 1), columns=['Vibration Pulse'])
-            for i in range(30):
-                v = round(0.42 + np.random.normal(0, 0.04), 3); t = round(28.5 + np.random.normal(0, 0.6), 1); curr = round(4.8 + np.random.normal(0, 0.1), 2)
-                vibrate_metric.metric("Vibration (mm/s)", f"{v}"); temp_metric.metric("Core Temp (°C)", f"{t}"); load_metric.metric("Current (Amps)", f"{curr}")
-                new_row = pd.DataFrame([[v]], columns=['Vibration Pulse']); pulse_data = pd.concat([pulse_data, new_row], ignore_index=True)
-                chart_space.line_chart(pulse_data.tail(20))
-                time.sleep(0.4)
-    else:
-        st.warning("Please activate a Homigo Shield to access the Guardian Live Feed.")
-
-# ----------------------------------------
-# PAGE 3: AI DIAGNOSTICS (With Slot Booking)
-# ----------------------------------------
-elif menu == "📷 AI Diagnostics":
-    st.header("📷 AI Diagnostics")
-    st.write("Scan your appliance components for structural health verification.")
-    up = st.file_uploader("Upload Component Image...", type=["jpg", "png", "jpeg"])
-    
-    if up:
-        img = cv2.imdecode(np.asarray(bytearray(up.read()), dtype=np.uint8), 1)
-        with st.spinner("AI analyzing structural patterns..."):
-            time.sleep(1.2)
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            edges = cv2.Canny(gray, 100, 200)
-            density = np.sum(edges == 255) / edges.size
-        
-        col1, col2 = st.columns(2)
-        col1.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), caption="Input Feed", use_container_width=True)
-        col2.image(edges, caption="AI Edge Mapping", use_container_width=True)
-        
-        st.markdown("### 🔍 Homigo Diagnostic Report")
-        if density > 0.05:
-            st.error("**Finding: CRITICAL FAULT DETECTED**")
-            st.markdown("""
-            **📋 Recommendations:**
-            1. **Immediate Shutdown:** Power off the unit immediately.
-            2. **Technician Visit:** Covered under your **Homigo Shield**.
-            """)
-            st.markdown("---")
-            st.subheader("📅 Book Your Service Slot")
-            with st.form("service_booking"):
-                c_day, c_time = st.columns(2)
-                day = c_day.selectbox("Select Preferred Day:", ["Today", "Tomorrow", "Monday", "Tuesday"])
-                slot = c_time.selectbox("Select Time Slot:", ["Morning (10 AM - 1 PM)", "Afternoon (2 PM - 5 PM)", "Evening (6 PM - 9 PM)"])
-                if st.form_submit_button("Confirm Slot & Book Technician"):
-                    st.success(f"✅ Technician Booked for {day} during the {slot}!")
-                    st.balloons()
-        else:
-            st.success("**Finding: HEALTHY COMPONENT**")
-            st.markdown("""
-            **📋 Recommendations:**
-            1. **Regular Maintenance:** Proceed with quarterly cleaning.
-            2. **No action required.**
-            """)
-        st.metric("AI Confidence", f"{round(92 + (density * 10), 2)}%")
+            pulse = pd.DataFrame(np.random.randn(20, 1), columns=['Vibration Pulse'])
+            for i in range(25):
+                v = round(0.42 + np.random.normal(0, 0.04), 3)
+                t = round(28.5 + np.random.normal(0, 0.6), 1)
+                curr = round(4.8 + np.random.normal(0, 0.1), 2)
+                v1.metric("Vibration (mm/s)", f"{v}")
+                v2.metric("Core Temp (°C)", f"{t}")
+                v3.metric("Current (Amps)", f"{curr}")
+                pulse = pd.concat([pulse, pd.DataFrame([[v]], columns=['Vibration Pulse'])], ignore_index=True)
+                chart_space.line_chart(pulse
