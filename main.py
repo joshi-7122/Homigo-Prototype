@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import time
 import pandas as pd
+from datetime import datetime, timedelta
 
 # --- 1. STATE INITIALIZATION ---
 if 'is_subscribed' not in st.session_state:
@@ -18,6 +19,7 @@ st.set_page_config(page_title="Homigo | Smart Hub", layout="centered")
 st.sidebar.title("🏠 Homigo")
 if st.session_state.is_subscribed:
     st.sidebar.success(f"🛡️ Shield Active: {st.session_state.subscription_data['brand']} {st.session_state.subscription_data['appliance']}")
+    st.sidebar.caption(f"Valid Until: {st.session_state.subscription_data['expiry']}")
 else:
     st.sidebar.warning("🛡️ Status: No Active Plan")
 
@@ -41,8 +43,9 @@ if menu == "🏠 Home / AMC Hub":
             col1, col2 = st.columns([2, 1])
             with col1:
                 st.write(f"**Appliance:** {data['brand']} {data['appliance']}")
-                st.write(f"**Timeline:** {data['timeline']}")
+                st.write(f"**Age Bracket:** {data['timeline']}")
                 st.write(f"**Contract:** {data['duration']}")
+                st.write(f"**Valid Until:** :green[{data['expiry']}]") # Showing when AMC lasts
                 st.write(f"**Reference ID:** #HMGO-{data['order_id']}")
             with col2:
                 st.metric("Unit Health", "94%", delta="Optimal")
@@ -56,12 +59,21 @@ if menu == "🏠 Home / AMC Hub":
         if st.session_state.checkout_step == 'selection':
             st.header("🛡️ Service Plan Selection")
             app_type = st.selectbox("Select Appliances:", ["Air Conditioner (AC)", "Refrigerator", "Washing Machine", "RO Purifier", "Microwave Oven"])
-            brands = {"Air Conditioner (AC)": ["Daikin", "Voltas", "LG", "Blue Star", "Samsung"], "Refrigerator": ["Samsung", "LG", "Whirlpool"], "Washing Machine": ["IFB", "LG", "Samsung"], "RO Purifier": ["Kent", "Aquaguard"], "Microwave Oven": ["Samsung", "LG"]}
+            
+            brands = {"Air Conditioner (AC)": ["Daikin", "Voltas", "LG", "Blue Star", "Samsung"], 
+                      "Refrigerator": ["Samsung", "LG", "Whirlpool"], 
+                      "Washing Machine": ["IFB", "LG", "Samsung"], 
+                      "RO Purifier": ["Kent", "Aquaguard"], 
+                      "Microwave Oven": ["Samsung", "LG"]}
             brand_name = st.selectbox("Select Brand:", brands[app_type])
+            
+            # UPDATED LABEL
             timeline_options = ["2000-2005", "2006-2010", "2011-2015", "2016-2020", "2021-Present"]
-            selected_timeline = st.selectbox("Select Purchase Timeline:", timeline_options, index=3)
+            selected_timeline = st.selectbox("In which time period does your appliance fall?", timeline_options, index=3)
+            
             duration = st.radio("Contract Period:", ["6 Months", "9 Months", "1.5 Years", "2 Years", "3 Years"], horizontal=True)
             
+            # Pricing Engine
             pricing_matrix = {"Air Conditioner (AC)": 1800, "Refrigerator": 1400, "Washing Machine": 1200, "RO Purifier": 1100, "Microwave Oven": 700}
             age_multiplier = {"2000-2005": 1.6, "2006-2010": 1.4, "2011-2015": 1.2, "2016-2020": 1.0, "2021-Present": 0.9}
             dur_map = {"6 Months": 0.6, "9 Months": 0.8, "1.5 Years": 1.4, "2 Years": 1.8, "3 Years": 2.5}
@@ -88,8 +100,22 @@ if menu == "🏠 Home / AMC Hub":
         elif st.session_state.checkout_step == 'success':
             st.balloons(); st.header("✅ Payment Confirmed")
             if st.button("Go to Home"):
+                # LOGIC TO CALCULATE EXPIRY DATE
+                dur_str = st.session_state.temp_data['duration']
+                # Default 365 days, adjust based on choice
+                days_map = {"6 Months": 182, "9 Months": 273, "1.5 Years": 547, "2 Years": 730, "3 Years": 1095}
+                expiry_date = (datetime.now() + timedelta(days=days_map[dur_str])).strftime("%d %b %Y")
+                
                 st.session_state.is_subscribed = True
-                st.session_state.subscription_data = {"name": st.session_state.temp_name, "appliance": st.session_state.temp_data['app'], "brand": st.session_state.temp_data['brand'], "timeline": st.session_state.temp_data['timeline'], "duration": st.session_state.temp_data['duration'], "order_id": np.random.randint(1000, 9999)}
+                st.session_state.subscription_data = {
+                    "name": st.session_state.temp_name, 
+                    "appliance": st.session_state.temp_data['app'], 
+                    "brand": st.session_state.temp_data['brand'], 
+                    "timeline": st.session_state.temp_data['timeline'], 
+                    "duration": st.session_state.temp_data['duration'], 
+                    "expiry": expiry_date,
+                    "order_id": np.random.randint(1000, 9999)
+                }
                 st.session_state.checkout_step = 'selection'; st.rerun()
 
 # ----------------------------------------
@@ -102,7 +128,7 @@ elif menu == "🛡️ Guardian Live Feed":
         st.subheader(f"Telemetry Stream: {data['brand']} {data['appliance']}")
         m1, m2, m3 = st.columns(3)
         vibrate_metric = m1.empty(); temp_metric = m2.empty(); load_metric = m3.empty()
-        chart_space = st.empty(); alert_space = st.empty()
+        chart_space = st.empty()
         
         if st.button("Start Live Monitoring"):
             pulse_data = pd.DataFrame(np.random.randn(20, 1), columns=['Vibration Pulse'])
@@ -112,7 +138,6 @@ elif menu == "🛡️ Guardian Live Feed":
                 new_row = pd.DataFrame([[v]], columns=['Vibration Pulse']); pulse_data = pd.concat([pulse_data, new_row], ignore_index=True)
                 chart_space.line_chart(pulse_data.tail(20))
                 time.sleep(0.4)
-            st.info("Monitoring session ended.")
     else:
         st.warning("Please activate a Homigo Shield to access the Guardian Live Feed.")
 
@@ -122,13 +147,10 @@ elif menu == "🛡️ Guardian Live Feed":
 elif menu == "📷 AI Diagnostics":
     st.header("📷 AI Diagnostics")
     st.write("Scan your appliance components for structural health verification.")
-    
     up = st.file_uploader("Upload Component Image...", type=["jpg", "png", "jpeg"])
     
     if up:
-        file_bytes = np.asarray(bytearray(up.read()), dtype=np.uint8)
-        img = cv2.imdecode(file_bytes, 1)
-        
+        img = cv2.imdecode(np.asarray(bytearray(up.read()), dtype=np.uint8), 1)
         with st.spinner("AI analyzing structural patterns..."):
             time.sleep(1.2)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -140,8 +162,6 @@ elif menu == "📷 AI Diagnostics":
         col2.image(edges, caption="AI Edge Mapping", use_container_width=True)
         
         st.markdown("### 🔍 Homigo Diagnostic Report")
-        
-        # PRESERVED CONTENT
         if density > 0.05:
             st.error("**Finding: CRITICAL FAULT DETECTED**")
             st.markdown("""
@@ -149,15 +169,12 @@ elif menu == "📷 AI Diagnostics":
             1. **Immediate Shutdown:** Power off the unit immediately.
             2. **Technician Visit:** Covered under your **Homigo Shield**.
             """)
-            
-            # NEW: SLOT BOOKING UI
             st.markdown("---")
             st.subheader("📅 Book Your Service Slot")
             with st.form("service_booking"):
                 c_day, c_time = st.columns(2)
                 day = c_day.selectbox("Select Preferred Day:", ["Today", "Tomorrow", "Monday", "Tuesday"])
                 slot = c_time.selectbox("Select Time Slot:", ["Morning (10 AM - 1 PM)", "Afternoon (2 PM - 5 PM)", "Evening (6 PM - 9 PM)"])
-                
                 if st.form_submit_button("Confirm Slot & Book Technician"):
                     st.success(f"✅ Technician Booked for {day} during the {slot}!")
                     st.balloons()
@@ -168,5 +185,4 @@ elif menu == "📷 AI Diagnostics":
             1. **Regular Maintenance:** Proceed with quarterly cleaning.
             2. **No action required.**
             """)
-            
         st.metric("AI Confidence", f"{round(92 + (density * 10), 2)}%")
