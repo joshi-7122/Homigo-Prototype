@@ -154,7 +154,7 @@ elif menu == "🛡️ Guardian Live Feed":
         v1 = m1.empty(); v2 = m2.empty(); v3 = m3.empty()
         chart_space = st.empty()
         
-        if st.button("Start Live Monitoring"):
+       if st.button("Start Live Monitoring"):
             pulse = pd.DataFrame(np.random.randn(20, 1), columns=['Vibration Pulse'])
             for i in range(25):
                 v = round(0.42 + np.random.normal(0, 0.04), 3)
@@ -164,4 +164,43 @@ elif menu == "🛡️ Guardian Live Feed":
                 v2.metric("Core Temp (°C)", f"{t}")
                 v3.metric("Current (Amps)", f"{curr}")
                 pulse = pd.concat([pulse, pd.DataFrame([[v]], columns=['Vibration Pulse'])], ignore_index=True)
-                chart_space.line_chart(pulse
+                chart_space.line_chart(pulse.tail(20))
+                time.sleep(0.4)
+    else:
+        st.warning("Please activate a Homigo Shield to access the Guardian Live Feed.")
+
+# ----------------------------------------
+# PAGE 3: AI DIAGNOSTICS
+# ----------------------------------------
+elif menu == "📷 AI Diagnostics":
+    st.header("📷 AI Diagnostics")
+    up = st.file_uploader("Upload Component Image...", type=["jpg", "png", "jpeg"])
+    
+    if up:
+        img = cv2.imdecode(np.asarray(bytearray(up.read()), dtype=np.uint8), 1)
+        with st.spinner("AI Analysis in progress..."):
+            time.sleep(1.2)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            edges = cv2.Canny(gray, 100, 200)
+            density = np.sum(edges == 255) / edges.size
+        
+        c1, c2 = st.columns(2)
+        c1.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), caption="Input Feed")
+        c2.image(edges, caption="AI Edge Mapping")
+        
+        st.markdown("### 🔍 Homigo Diagnostic Report")
+        if density > 0.05:
+            st.error("**Finding: CRITICAL FAULT DETECTED**")
+            st.markdown("1. **Immediate Shutdown Required.**\n2. **Technician Visit:** Covered under Shield.")
+            st.markdown("---")
+            st.subheader("📅 Book Your Service Slot")
+            with st.form("service_booking"):
+                day = st.selectbox("Select Day:", ["Today", "Tomorrow", "Monday"])
+                slot = st.selectbox("Select Slot:", ["Morning", "Afternoon", "Evening"])
+                if st.form_submit_button("Confirm Booking"):
+                    st.success(f"✅ Expert scheduled for {day} ({slot}).")
+                    st.balloons()
+        else:
+            st.success("**Finding: HEALTHY COMPONENT**")
+            st.write("Proceed with routine quarterly maintenance.")
+        st.metric("AI Confidence", f"{round(92 + (density * 10), 2)}%")
